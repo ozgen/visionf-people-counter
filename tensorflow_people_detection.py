@@ -62,9 +62,11 @@ class DetectorAPI:
         self.default_graph.close()
 
 
-line = []
+line = (0, 0, 0, 0)
 startPoint = False
 endPoint = False
+
+lineFlag = False
 
 
 def on_mouse(event, x, y, flags, params):
@@ -79,13 +81,11 @@ def on_mouse(event, x, y, flags, params):
             line = []
 
         if startPoint == False:
-            line[0] = x
-            line[1]=y
+            line = (x, y, 0, 0)
             startPoint = True
         elif endPoint == False:
             endPoint = True
-            line[2] = x
-            line[3] = y
+            line = (line[0], line[1], x, y)
 
 
 if __name__ == "__main__":
@@ -121,9 +121,15 @@ if __name__ == "__main__":
         rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (frame_size_w, frame_size_h))
         cv2.namedWindow('preview')
+
         cv2.setMouseCallback('preview', on_mouse)
-        if startPoint == True and endPoint == True:
-            cv2.line(img, (line[0], line[1]), (line[2], line[3]), (255, 0, 255), 2)
+        if lineFlag:
+            if startPoint == True and endPoint == True:
+                try:
+                    cv2.line(img, (line[0], line[1]), (line[2], line[3]), (255, 0, 255), 2)
+                except:
+                    pass
+
 
         if initBB is not None:
             (a, b, c, d) = initBB
@@ -245,7 +251,10 @@ if __name__ == "__main__":
         if key == ord("x"):
             # select the bounding box of the object we want to track (make
             # sure you press ENTER or SPACE after selecting the ROI)
-            print("asd")
+            if lineFlag == False:
+                lineFlag = True
+            else:
+                lineFlag = False
 
         totalFrames += 1
     cv2.destroyAllWindows()
