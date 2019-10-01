@@ -9,6 +9,8 @@ from pyimagesearch.centroidtracker import CentroidTracker
 from pyimagesearch.trackableobject import TrackableObject
 import dlib
 
+from roi_elements import RoiElements
+
 
 class DetectorAPI:
     def __init__(self, path_to_ckpt):
@@ -68,6 +70,8 @@ endPoint = False
 
 lineFlag = False
 
+startCountFlag = False
+
 
 def on_mouse(event, x, y, flags, params):
     global line, startPoint, endPoint
@@ -97,18 +101,13 @@ if __name__ == "__main__":
     totalDown = 0
     W = None
     H = None
-    W_roi = None
-    H_roi = None
     roi = 250
     initBB = None
     roi_area = None
+    roi_elements = None
+
     frame_size_w = 640
     frame_size_h = 480
-
-    coord_left = 0
-    coord_top = 0
-    coord_right = 0
-    coord_bottom = 0
 
     model_path = 'faster_rcnn_inception_v2/frozen_inference_graph.pb'
     odapi = DetectorAPI(path_to_ckpt=model_path)
@@ -130,17 +129,10 @@ if __name__ == "__main__":
                 except:
                     pass
 
-
         if initBB is not None:
-            (a, b, c, d) = initBB
-            roi_area = img[b: b + d, a:a + c]
+            roi_elements = RoiElements(initBB)
+            roi_area = roi_elements.getRoiArea(img)
             rgb = cv2.cvtColor(roi_area, cv2.COLOR_BGR2RGB)
-            coord_left = a + c
-            coord_top = b + d
-            coord_right = a
-            coord_bottom = b
-
-            (W_roi, H_roi) = roi_area.shape[:2]
 
         if W is None or H is None:
             (H, W) = img.shape[:2]
@@ -153,6 +145,10 @@ if __name__ == "__main__":
             trackers = []
             if roi_area is not None:
                 boxes, scores, classes, num = odapi.processFrame(roi_area)
+                # roi area
+                cv2.rectangle(img, (roi_elements.roi_area.coord_left, roi_elements.roi_area.coord_top),
+                              (roi_elements.roi_area.coord_right, roi_elements.roi_area.coord_bottom),
+                              (0, 255, 0), 2)
             else:
                 boxes, scores, classes, num = odapi.processFrame(img)
 
@@ -163,22 +159,29 @@ if __name__ == "__main__":
                     box = boxes[i]
                     if initBB is not None:
                         (a, b, c, d) = initBB
-                        # roi area
-                        # cv2.rectangle(img, (coord_left, coord_top), (coord_right, coord_bottom),
-                        #              (0, 255, 0), 2)
+
                         # cv2.rectangle(img, (box[1] + coord_right, box[0] + coord_top),
                         #             (box[3] + coord_right, box[2] + coord_top), (255, 0, 0), 2)
                     else:
                         cv2.rectangle(img, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
 
                     tracker = dlib.correlation_tracker()
-                    left = box[1] + coord_right
-                    top = box[0] + coord_bottom
-                    right = box[3] + coord_right
-                    bottom = box[2] + coord_bottom
-                    line = dlib.rectangle(int(left), int(top),
-                                          int(right), int(bottom))
-                    tracker.start_track(rgb, line)
+                    if roi_elements is not None:
+                        left = box[1] + roi_elements.roi_area.coord_right
+                        top = box[0] + roi_elements.roi_area.coord_bottom
+                        right = box[3] + roi_elements.roi_area.coord_right
+                        bottom = box[2] + roi_elements.roi_area.coord_bottom
+                        rect = dlib.rectangle(int(left), int(top),
+                                              int(right), int(bottom))
+                        tracker.start_track(rgb, rect)
+                    else:
+                        left = box[1]
+                        top = box[0]
+                        right = box[3]
+                        bottom = box[2]
+                        rect = dlib.rectangle(int(left), int(top),
+                                              int(right), int(bottom))
+                        tracker.start_track(rgb, rect)
 
                     trackers.append(tracker)
 
@@ -210,10 +213,12 @@ if __name__ == "__main__":
                 y = [c[1] for c in to.centroids]
                 direction = centroid[1] - np.mean(y)
                 to.centroids.append(centroid)
-
+                d = roi
                 if not to.counted:
+                    if startCountFlag and roi_elements.line is not None:
+                        d = roi_elements.calculateDistance(centroid)
 
-                    if direction > 0 and centroid[1] > roi:
+                    if direction > 0 and centroid[1] > d:
                         totalDown += 1
                         to.counted = True
 
@@ -255,6 +260,16 @@ if __name__ == "__main__":
                 lineFlag = True
             else:
                 lineFlag = False
+
+        if key == ord("b"):
+            # select the bounding box of the object we want to track (make
+            # sure you press ENTER or SPACE after selecting the ROI)
+            if startCountFlag is False:
+                startCountFlag = True
+                if roi_elements is not None and roi_elements.line is None:
+                    roi_elements.setLine(line)
+            else:
+                startCountFlag = False
 
         totalFrames += 1
     cv2.destroyAllWindows()
