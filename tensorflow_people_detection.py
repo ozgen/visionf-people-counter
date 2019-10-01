@@ -1,29 +1,12 @@
-import dlib
-
 import numpy as np
 import tensorflow as tf
 import cv2
 import time
 
+import UtilsIO
 from pyimagesearch.centroidtracker import CentroidTracker
 from pyimagesearch.trackableobject import TrackableObject
-
-totatFrames = 0
-ct = CentroidTracker(maxDisappeared=40, maxDistance=50)
-trackers = []
-trackableObjects = {}
-
-# initialize the total number of frames processed thus far, along
-# with the total number of objects that have moved either up or down
-totalFrames = 0
-totalDown = 0
-totalUp = 0
-
-# initialize the frame dimensions (we'll set them as soon as we read
-# the first frame from the video)
-W = None
-H = None
-roi = 450
+import dlib
 
 
 class DetectorAPI:
@@ -79,144 +62,152 @@ class DetectorAPI:
 
 
 if __name__ == "__main__":
-    model_path = '/Users/Ozgen/Desktop/VizyonFPeopleCounter/faster_rcnn_inception_v2/frozen_inference_graph.pb'
+    ct = CentroidTracker(maxDisappeared=40, maxDistance=50)
+    trackers = []
+    trackableObjects = {}
+
+    totalFrames = 0
+    totalDown = 0
+    W = None
+    H = None
+    roi = 250
+    initBB = None
+    roi_area = None
+    frame_size_w = 640
+    frame_size_h = 480
+
+    differance_left = 0
+    differance_top = 0
+    differance_right = 0
+    differance_bottom = 0
+
+    model_path = 'faster_rcnn_inception_v2/frozen_inference_graph.pb'
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
-    cap = cv2.VideoCapture('/Users/Ozgen/Desktop/VizyonFPeopleCounter/videos/TownCentreXVID.avi')
-    cap = cv2.VideoCapture('/Users/Ozgen/Desktop/VizyonFPeopleCounter/videos/example_01.mp4')
-    totalFrames = 0
+    cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME)
+
     while True:
         r, img = cap.read()
-        img = cv2.resize(img, (800, 600))
         rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (frame_size_w, frame_size_h))
 
-        # if the frame dimensions are empty, set them
+        if initBB is not None:
+            (a, b, c, d) = initBB
+            roi_area = img[b: b + d, a:a + c]
+            rgb = cv2.cvtColor(roi_area, cv2.COLOR_BGR2RGB)
+            differance_left = a + c
+            differance_top = b + d
+            differance_right = a
+            differance_bottom = b
+
         if W is None or H is None:
             (H, W) = img.shape[:2]
 
-        # Visualization of the results of a detection.
         status = "Waiting"
+        rects = []
 
-        if totalFrames % 20 == 0:
-
-            # set the status and initialize our new set of object trackers
+        if totalFrames % 30 == 0:
             status = "Detecting"
             trackers = []
+            if roi_area is not None:
+                boxes, scores, classes, num = odapi.processFrame(roi_area)
+            else:
+                boxes, scores, classes, num = odapi.processFrame(img)
 
-            boxes, scores, classes, num = odapi.processFrame(img)
-            rects = []
-
+            # Visualization of the results of a detection.
             for i in range(len(boxes)):
                 # Class 1 represents human
                 if classes[i] == 1 and scores[i] > threshold:
                     box = boxes[i]
-                    cv2.rectangle(img, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
-                    # construct a dlib rectangle object from the bounding
-                    # box coordinates and then start the dlib correlation
-                    # tracker
+                    if initBB is not None:
+                        (a, b, c, d) = initBB
+                        # roi area
+                        # cv2.rectangle(img, (differance_left, differance_top), (differance_right, differance_bottom),
+                        #                (0, 255, 0), 2)
+                        cv2.rectangle(img, (box[1] + differance_left, box[0] + differance_top),
+                                      (box[3] + differance_right, box[2] + differance_bottom), (255, 0, 0), 2)
+                    else:
+                        cv2.rectangle(img, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
+
                     tracker = dlib.correlation_tracker()
-                    rect = dlib.rectangle(int(box[1]), int(box[0]), int(box[3]), int(box[2]))
+                    rect = dlib.rectangle(int(box[1]), int(box[0]),
+                                          int(box[3]), int(box[2]))
                     tracker.start_track(rgb, rect)
 
-                    # add the tracker to our list of trackers so we can
-                    # utilize it during skip frames
                     trackers.append(tracker)
-                # otherwise, we should utilize our object *trackers* rather than
-                # object *detectors* to obtain a higher frame processing throughput
-                else:
 
-                    # loop over the trackers
-                    for tracker in trackers:
-                        # set the status of our system to be 'tracking' rather
-                        # than 'waiting' or 'detecting'
-                        status = "Tracking"
+        else:
+            for tracker in trackers:
+                status = "Tracking"
 
-                        # update the tracker and grab the updated position
-                        tracker.update(rgb)
-                        pos = tracker.get_position()
+                tracker.update(rgb)
+                pos = tracker.get_position()
 
-                        # unpack the position object
-                        startX = int(pos.left())
-                        startY = int(pos.top())
-                        endX = int(pos.right())
-                        endY = int(pos.bottom())
+                startX = int(pos.left())
+                startY = int(pos.top())
+                endX = int(pos.right())
+                endY = int(pos.bottom())
 
-                        # add the bounding box coordinates to the rectangles list
-                        rects.append((startX, startY, endX, endY))
+                rects.append((startX, startY, endX, endY))
+                cv2.rectangle(img, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
-        # draw a horizontal line in the center of the frame -- once an
-        # object crosses this line we will determine whether they were
-        # moving 'up' or 'down'
-
-        # todo line buraya eklenecek
-
-        # use the centroid tracker to associate the (1) old object
-        # centroids with (2) the newly computed object centroids
+        #        cv2.line(img, (0, roi), (W, roi), (0, 255, 255), 2)
         objects = ct.update(rects)
-        # loop over the tracked objects
+
         for (objectID, centroid) in objects.items():
-            # check to see if a trackable object exists for the current
-            # object ID
             to = trackableObjects.get(objectID, None)
 
-            # if there is no existing trackable object, create one
             if to is None:
                 to = TrackableObject(objectID, centroid)
 
-            # otherwise, there is a trackable object so we can utilize it
-            # to determine direction
             else:
-                # the difference between the y-coordinate of the *current*
-                # centroid and the mean of *previous* centroids will tell
-                # us in which direction the object is moving (negative for
-                # 'up' and positive for 'down')
                 y = [c[1] for c in to.centroids]
                 direction = centroid[1] - np.mean(y)
                 to.centroids.append(centroid)
 
-                # check to see if the object has been counted or not
                 if not to.counted:
-                    # if the direction is negative (indicating the object
-                    # is moving up) AND the centroid is above the center
-                    # line, count the object
-                    if direction < 0 and centroid[1] < H // 2:
-                        totalUp += 1
-                        to.counted = True
 
-                    # if the direction is positive (indicating the object
-                    # is moving down) AND the centroid is below the
-                    # center line, count the object
-                    elif direction > 0 and centroid[1] > H // 2:
+                    if direction > 0 and centroid[1] > roi:
                         totalDown += 1
                         to.counted = True
 
-            # store the trackable object in our dictionary
             trackableObjects[objectID] = to
 
-            # draw both the ID of the object and the centroid of the
-            # object on the output frame
             text = "ID {}".format(objectID)
             cv2.putText(img, text, (centroid[0] - 10, centroid[1] - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.circle(img, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-        # construct a tuple of information we will be displaying on the
-        # frame
         info = [
-            ("Up", totalUp),
             ("Down", totalDown),
-            ("Status", status),
+            ("Status", status)
         ]
 
-        # loop over the info tuples and draw them on our frame
         for (i, (k, v)) in enumerate(info):
             text = "{}: {}".format(k, v)
             cv2.putText(img, text, (10, H - ((i * 20) + 20)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-        totalFrames += 1
-
         cv2.imshow("preview", img)
         key = cv2.waitKey(1)
         if key & 0xFF == ord('q'):
             break
+
+        if key == ord("s"):
+            initBB = None
+            initBB = cv2.selectROI("Frame", img, fromCenter=False,
+                                   showCrosshair=False)
+            (a, b, c, d) = initBB
+            tmp = img[b: b + d, a:a + c]
+        #            cv2.imshow("tmp", tmp)
+        #            cv2.namedWindow('real image')
+        #            a = cv.SetMouseCallback('real image', on_mouse, 0)
+        #            cv2.imshow('real image', img)
+
+        if key == ord("x"):
+            # select the bounding box of the object we want to track (make
+            # sure you press ENTER or SPACE after selecting the ROI)
+            print("asd")
+
+        totalFrames += 1
+    cv2.destroyAllWindows()
