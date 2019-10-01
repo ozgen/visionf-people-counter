@@ -61,12 +61,12 @@ while (True):
             # dikdörtgenin video üzerinde gösterir
             cv2.rectangle(frame, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
-            rect = dlib.rectangle(int(startX), int(startY), int(endX), int(endY))
+            line = dlib.rectangle(int(startX), int(startY), int(endX), int(endY))
             # sınırlayıcı kutu koordinatlarından bir dlib dikdörtgen nesnesi oluşturun ve
             # sonra dlib korelasyon izleyicisini başlatın
             tracker = dlib.correlation_tracker()
             try:
-                tracker.start_track(rgb, rect)
+                tracker.start_track(rgb, line)
                 trackers.append(tracker)
             except:
                 pass

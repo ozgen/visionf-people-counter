@@ -135,8 +135,8 @@ while True:
 				# box coordinates and then start the dlib correlation
 				# tracker
 				tracker = dlib.correlation_tracker()
-				rect = dlib.rectangle(int(startX), int(startY), int(endX), int(endY))
-				tracker.start_track(rgb, rect)
+				line = dlib.rectangle(int(startX), int(startY), int(endX), int(endY))
+				tracker.start_track(rgb, line)
 
 				# add the tracker to our list of trackers so we can
 				# utilize it during skip frames

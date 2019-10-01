@@ -62,6 +62,32 @@ class DetectorAPI:
         self.default_graph.close()
 
 
+line = []
+startPoint = False
+endPoint = False
+
+
+def on_mouse(event, x, y, flags, params):
+    global line, startPoint, endPoint
+
+    # get mouse click
+    if event == cv2.EVENT_LBUTTONDOWN:
+
+        if startPoint == True and endPoint == True:
+            startPoint = False
+            endPoint = False
+            line = []
+
+        if startPoint == False:
+            line[0] = x
+            line[1]=y
+            startPoint = True
+        elif endPoint == False:
+            endPoint = True
+            line[2] = x
+            line[3] = y
+
+
 if __name__ == "__main__":
     ct = CentroidTracker(maxDisappeared=40, maxDistance=50)
     trackers = []
@@ -87,12 +113,17 @@ if __name__ == "__main__":
     model_path = 'faster_rcnn_inception_v2/frozen_inference_graph.pb'
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
+
     cap = cv2.VideoCapture(config.CONFIG_IP_CAM)
 
     while True:
         r, img = cap.read()
         rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (frame_size_w, frame_size_h))
+        cv2.namedWindow('preview')
+        cv2.setMouseCallback('preview', on_mouse)
+        if startPoint == True and endPoint == True:
+            cv2.line(img, (line[0], line[1]), (line[2], line[3]), (255, 0, 255), 2)
 
         if initBB is not None:
             (a, b, c, d) = initBB
@@ -139,9 +170,9 @@ if __name__ == "__main__":
                     top = box[0] + coord_bottom
                     right = box[3] + coord_right
                     bottom = box[2] + coord_bottom
-                    rect = dlib.rectangle(int(left), int(top),
+                    line = dlib.rectangle(int(left), int(top),
                                           int(right), int(bottom))
-                    tracker.start_track(rgb, rect)
+                    tracker.start_track(rgb, line)
 
                     trackers.append(tracker)
 
@@ -204,10 +235,8 @@ if __name__ == "__main__":
 
         if key == ord("s"):
             initBB = None
-            initBB = cv2.selectROI("Frame", img, fromCenter=False,
+            initBB = cv2.selectROI("ROI_FRAME", img, fromCenter=False,
                                    showCrosshair=False)
-            (a, b, c, d) = initBB
-            tmp = img[b: b + d, a:a + c]
         #            cv2.imshow("tmp", tmp)
         #            cv2.namedWindow('real image')
         #            a = cv.SetMouseCallback('real image', on_mouse, 0)
