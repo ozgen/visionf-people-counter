@@ -4,6 +4,7 @@ import cv2
 import time
 
 import UtilsIO
+import config
 from pyimagesearch.centroidtracker import CentroidTracker
 from pyimagesearch.trackableobject import TrackableObject
 import dlib
@@ -70,21 +71,23 @@ if __name__ == "__main__":
     totalDown = 0
     W = None
     H = None
+    W_roi = None
+    H_roi = None
     roi = 250
     initBB = None
     roi_area = None
     frame_size_w = 640
     frame_size_h = 480
 
-    differance_left = 0
-    differance_top = 0
-    differance_right = 0
-    differance_bottom = 0
+    coord_left = 0
+    coord_top = 0
+    coord_right = 0
+    coord_bottom = 0
 
     model_path = 'faster_rcnn_inception_v2/frozen_inference_graph.pb'
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
-    cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME)
+    cap = cv2.VideoCapture(config.CONFIG_IP_CAM)
 
     while True:
         r, img = cap.read()
@@ -95,10 +98,12 @@ if __name__ == "__main__":
             (a, b, c, d) = initBB
             roi_area = img[b: b + d, a:a + c]
             rgb = cv2.cvtColor(roi_area, cv2.COLOR_BGR2RGB)
-            differance_left = a + c
-            differance_top = b + d
-            differance_right = a
-            differance_bottom = b
+            coord_left = a + c
+            coord_top = b + d
+            coord_right = a
+            coord_bottom = b
+
+            (W_roi, H_roi) = roi_area.shape[:2]
 
         if W is None or H is None:
             (H, W) = img.shape[:2]
@@ -106,7 +111,7 @@ if __name__ == "__main__":
         status = "Waiting"
         rects = []
 
-        if totalFrames % 30 == 0:
+        if totalFrames % 10 == 0:
             status = "Detecting"
             trackers = []
             if roi_area is not None:
@@ -122,16 +127,20 @@ if __name__ == "__main__":
                     if initBB is not None:
                         (a, b, c, d) = initBB
                         # roi area
-                        # cv2.rectangle(img, (differance_left, differance_top), (differance_right, differance_bottom),
-                        #                (0, 255, 0), 2)
-                        cv2.rectangle(img, (box[1] + differance_left, box[0] + differance_top),
-                                      (box[3] + differance_right, box[2] + differance_bottom), (255, 0, 0), 2)
+                        # cv2.rectangle(img, (coord_left, coord_top), (coord_right, coord_bottom),
+                        #              (0, 255, 0), 2)
+                        # cv2.rectangle(img, (box[1] + coord_right, box[0] + coord_top),
+                        #             (box[3] + coord_right, box[2] + coord_top), (255, 0, 0), 2)
                     else:
                         cv2.rectangle(img, (box[1], box[0]), (box[3], box[2]), (255, 0, 0), 2)
 
                     tracker = dlib.correlation_tracker()
-                    rect = dlib.rectangle(int(box[1]), int(box[0]),
-                                          int(box[3]), int(box[2]))
+                    left = box[1] + coord_right
+                    top = box[0] + coord_bottom
+                    right = box[3] + coord_right
+                    bottom = box[2] + coord_bottom
+                    rect = dlib.rectangle(int(left), int(top),
+                                          int(right), int(bottom))
                     tracker.start_track(rgb, rect)
 
                     trackers.append(tracker)
