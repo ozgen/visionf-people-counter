@@ -113,6 +113,7 @@ if __name__ == "__main__":
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
 
+    # cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME)
     cap = cv2.VideoCapture(config.CONFIG_IP_CAM)
 
     while True:
@@ -129,8 +130,10 @@ if __name__ == "__main__":
                 except:
                     pass
 
-        if initBB is not None:
+        if initBB is not None and roi_elements is None or (initBB is not None and initBB != roi_elements.box):
             roi_elements = RoiElements(initBB)
+
+        if initBB is not None:
             roi_area = roi_elements.getRoiArea(img)
             rgb = cv2.cvtColor(roi_area, cv2.COLOR_BGR2RGB)
 
@@ -140,15 +143,12 @@ if __name__ == "__main__":
         status = "Waiting"
         rects = []
 
-        if totalFrames % 10 == 0:
+        if totalFrames % 5 == 0:
             status = "Detecting"
             trackers = []
             if roi_area is not None:
                 boxes, scores, classes, num = odapi.processFrame(roi_area)
-                # roi area
-                cv2.rectangle(img, (roi_elements.roi_area.coord_left, roi_elements.roi_area.coord_top),
-                              (roi_elements.roi_area.coord_right, roi_elements.roi_area.coord_bottom),
-                              (0, 255, 0), 2)
+
             else:
                 boxes, scores, classes, num = odapi.processFrame(img)
 
@@ -210,15 +210,30 @@ if __name__ == "__main__":
                 to = TrackableObject(objectID, centroid)
 
             else:
+
                 y = [c[1] for c in to.centroids]
-                direction = centroid[1] - np.mean(y)
-                to.centroids.append(centroid)
+                directionY = centroid[1] - np.mean(y)
+                x = [c[0] for c in to.centroids]
+                directionX = centroid[0] - np.mean(x)
+
                 d = roi
                 if not to.counted:
                     if startCountFlag and roi_elements.line is not None:
-                        d = roi_elements.calculateDistance(centroid)
+                        dy = roi_elements.calcMeanYDistance()
+                        dx = roi_elements.calcMeanXDistance()
+                        angle = roi_elements.calculateAngle(centroid)
 
-                    if direction > 0 and centroid[1] > d:
+                    if roi_elements is not None and roi_elements.line is not None:
+
+                        if angle > 45 and directionX > 0 and centroid[0] > dx:
+                            totalDown += 1
+                            to.counted = True
+
+                        elif angle < 45 and directionY > 0 and centroid[1] > dy:
+                            totalDown += 1
+                            to.counted = True
+
+                    elif (directionY > 0 and centroid[1] > d):
                         totalDown += 1
                         to.counted = True
 
@@ -238,6 +253,15 @@ if __name__ == "__main__":
             text = "{}: {}".format(k, v)
             cv2.putText(img, text, (10, H - ((i * 20) + 20)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+
+        if roi_elements != None:
+            # roi area
+            cv2.rectangle(img, (roi_elements.roi_area.coord_left, roi_elements.roi_area.coord_top),
+                          (roi_elements.roi_area.coord_right, roi_elements.roi_area.coord_bottom),
+                          (0, 255, 0), 2)
+        if roi_elements != None and roi_elements.line != None:
+            cv2.line(img, (roi_elements.line[0], roi_elements.line[1]), (roi_elements.line[2], roi_elements.line[3]),
+                     (255, 0, 255), 2)
 
         cv2.imshow("preview", img)
         key = cv2.waitKey(1)
@@ -268,6 +292,7 @@ if __name__ == "__main__":
                 startCountFlag = True
                 if roi_elements is not None and roi_elements.line is None:
                     roi_elements.setLine(line)
+                    totalDown = 0
             else:
                 startCountFlag = False
 
