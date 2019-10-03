@@ -59,7 +59,7 @@ class RoiElements:
     def calcMeanXDistance(self):
         return int((self.line[0] + self.line[2]) / 2)
 
-    def calculateAngle(self, centroid):
+    def calculateAngle(self):
         # point 1
         x1 = self.line[0]
         y1 = self.line[1]
@@ -75,3 +75,25 @@ class RoiElements:
         angle_deg = abs(angle_rad * 180.0 / pi) % 90
 
         return int(angle_deg)
+
+    def checkCentroidInsideLine(self, centroid):
+
+        rtn = False
+        # point 1
+        x1 = self.line[0]
+        y1 = self.line[1]
+
+        # point 2
+        x2 = self.line[2]
+        y2 = self.line[3]
+
+        (a, b) = centroid
+
+        if a < x1 or a < x2:
+            rtn = True
+        if b < y1 or b < y2:
+            return True
+
+        return rtn
+
+
