@@ -115,7 +115,7 @@ if __name__ == "__main__":
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
 
-    cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME_2)
+    cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME)
     # cap = cv2.VideoCapture(config.CONFIG_IP_CAM)
 
     # start the frames per second throughput estimator
@@ -147,7 +147,7 @@ if __name__ == "__main__":
         status = "Waiting"
         rects = []
 
-        if totalFrames % 7 == 0:
+        if totalFrames % 10 == 0:
             status = "Detecting"
             trackers = []
             if roi_area is not None:
@@ -197,7 +197,7 @@ if __name__ == "__main__":
                 rects.append((startX, startY, endX, endY))
                 # cv2.rectangle(img, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
-        #        cv2.line(img, (0, roi), (W, roi), (0, 255, 255), 2)
+            #        cv2.line(img, (0, roi), (W, roi), (0, 255, 255), 2)
 
             objects = ct.update(rects)
 
@@ -319,13 +319,12 @@ if __name__ == "__main__":
 
             # increment the total number of frames processed thus far and
             # then update the FPS counter
-            totalFrames += 1
-            fps.update()
+        totalFrames += 1
+        fps.update()
 
         # stop the timer and display FPS information
-        fps.stop()
-        #print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
-        #print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+    fps.stop()
+    # print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
+    # print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
-        totalFrames += 1
     cv2.destroyAllWindows()
