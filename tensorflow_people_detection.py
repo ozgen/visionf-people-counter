@@ -120,14 +120,15 @@ if __name__ == "__main__":
 
     # start the frames per second throughput estimator
     fps = FPS().start()
+    cv2.namedWindow('preview')
+
+    cv2.setMouseCallback('preview', on_mouse)
 
     while True:
         r, img = cap.read()
-        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (frame_size_w, frame_size_h))
-        cv2.namedWindow('preview')
+        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        cv2.setMouseCallback('preview', on_mouse)
         if lineFlag:
             if startPoint == True and endPoint == True:
                 try:
@@ -147,7 +148,7 @@ if __name__ == "__main__":
         status = "Waiting"
         rects = []
 
-        if totalFrames % 10 == 0:
+        if totalFrames % 7 == 0:
             status = "Detecting"
             trackers = []
             if roi_area is not None:
