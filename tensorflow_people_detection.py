@@ -115,7 +115,7 @@ if __name__ == "__main__":
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
 
-    cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME)
+    cap = cv2.VideoCapture(config.CONFIG_IP_CAM)
     # cap = cv2.VideoCapture(config.CONFIG_IP_CAM)
 
     # start the frames per second throughput estimator

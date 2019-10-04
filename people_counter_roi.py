@@ -188,8 +188,7 @@ while True:
                     right = endX
                     bottom = endY
 
-                rect = dlib.rectangle(int(left), int(top),
-                                      int(right), int(bottom))
+
 
                 # construct a dlib rectangle object from the bounding
                 # box coordinates and then start the dlib correlation
