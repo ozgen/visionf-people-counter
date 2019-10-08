@@ -1,6 +1,3 @@
-import PyQt5
-
-import numpy as np
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import *
 from PyQt5.uic import loadUiType
@@ -10,9 +7,6 @@ from PyQt5 import QtWidgets
 
 import os
 
-import cv2
-
-import config
 import data_validation
 from VideoPlayer import MainVideoPlayerWidget
 from data_validation import CameraObject
@@ -36,7 +30,8 @@ class SubEdit(QWidget, FROM_SUB_EDIT):
         close = close.exec()
 
         if close == QMessageBox.Yes:
-            event.accept()
+            # event.accept()
+            self.close()
         else:
             event.ignore()
     # let the window close
@@ -70,7 +65,6 @@ class Main(QMainWindow, FROM_MAIN):
     main_widged = None
     cnt = 1
     item_list = []
-
 
     def __init__(self, parent=None):
         super(Main, self).__init__(parent)
