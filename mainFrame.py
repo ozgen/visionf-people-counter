@@ -31,8 +31,8 @@ class SubEdit(QWidget, FROM_SUB_EDIT):
         close = close.exec()
 
         if close == QMessageBox.Yes:
-            # event.accept()
-            self.close()
+            event.accept()
+            # self.close()
         else:
             event.ignore()
 
@@ -115,20 +115,18 @@ class Main(QMainWindow, FROM_MAIN):
     def dellBtn1_on_click(self):
         custom_widget_list = self.list_widget.selectedItems()
         if not custom_widget_list: return
-        delete = QMessageBox()
-        delete.setText("Are you sure to delete?")
-        delete.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
-        delete = delete.exec()
 
-        if delete == QMessageBox.Yes:
+        for cw in custom_widget_list:
+            for i in range(len(self.item_list)):
 
-            for cw in custom_widget_list:
-                for i in range(len(self.item_list)):
+                if cw.text() == str(i):
+                    self.item_list.pop(i - 1)
+        if len(custom_widget_list) == 1 and len(self.item_list) == 1:
+            self.item_list.pop(0)
 
-                    if cw.text() == str(i):
-                        self.item_list.pop(i - 1)
-            self.cnt = 1
-            self.list_widget.clear()
+        self.cnt = 1
+        self.list_widget.clear()
+        if len(self.item_list) > 0:
             for co in self.item_list:
                 self.itemN = QListWidgetItem()
                 self.custom_widget = QCustomQWidget()
@@ -152,14 +150,3 @@ class Main(QMainWindow, FROM_MAIN):
                     self.sub_edit.setCameraObjet(co)
 
         self.sub_edit.show()
-
-    def closeEvent(self, event):
-        close = QMessageBox()
-        close.setText("Are you sure?")
-        close.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
-        close = close.exec()
-
-        if close == QMessageBox.Yes:
-            event.accept()
-        else:
-            event.ignore()
