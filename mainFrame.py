@@ -23,15 +23,23 @@ FROM_SUB_EDIT, _ = loadUiType(os.path.join(os.path.dirname(__file__), "sub_edit.
 imagePath = 'red.ico'
 
 
-class SubEdit(QMainWindow, FROM_SUB_EDIT):
+class SubEdit(QWidget, FROM_SUB_EDIT):
+
     def __init__(self, parent=None):
         super(SubEdit, self).__init__(parent)
         self.setupUi(self)
 
     def closeEvent(self, event):
-        # do stuff
-        super().close()
-        event.accept()
+        close = QMessageBox()
+        close.setText("Are you sure?")
+        close.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+        close = close.exec()
+
+        if close == QMessageBox.Yes:
+            event.accept()
+            self.switch_window.emit()
+        else:
+            event.ignore()
     # let the window close
 
 
@@ -63,6 +71,7 @@ class Main(QMainWindow, FROM_MAIN):
     main_widged = None
     cnt = 1
     item_list = []
+
 
     def __init__(self, parent=None):
         super(Main, self).__init__(parent)
@@ -137,6 +146,4 @@ class Main(QMainWindow, FROM_MAIN):
                     self.sub_edit.roiBtn.clicked.connect(self.video_player.on_roi_click)
                     self.sub_edit.lineBtn.clicked.connect(self.video_player.on_line_click)
 
-        quit = QAction("Quit", self.sub_edit)
-        quit.triggered.connect(self.sub_edit.closeEvent)
         self.sub_edit.show()
