@@ -115,24 +115,30 @@ class Main(QMainWindow, FROM_MAIN):
     def dellBtn1_on_click(self):
         custom_widget_list = self.list_widget.selectedItems()
         if not custom_widget_list: return
+        delete = QMessageBox()
+        delete.setText("Are you sure to delete?")
+        delete.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+        delete = delete.exec()
 
-        for cw in custom_widget_list:
-            for i in range(len(self.item_list)):
+        if delete == QMessageBox.Yes:
 
-                if cw.text() == str(i):
-                    self.item_list.pop(i - 1)
-        self.cnt = 1
-        self.list_widget.clear()
-        for co in self.item_list:
-            self.itemN = QListWidgetItem()
-            self.custom_widget = QCustomQWidget()
-            self.custom_widget.setTextSecond(co.camera_name)
-            self.itemN.setText(str(self.cnt))
-            self.custom_widget.setStatusIcon(co.statusBtn)
-            self.itemN.setSizeHint(self.custom_widget.sizeHint())
-            self.list_widget.addItem(self.itemN)
-            self.list_widget.setItemWidget(self.itemN, self.custom_widget)
-            self.cnt += 1
+            for cw in custom_widget_list:
+                for i in range(len(self.item_list)):
+
+                    if cw.text() == str(i):
+                        self.item_list.pop(i - 1)
+            self.cnt = 1
+            self.list_widget.clear()
+            for co in self.item_list:
+                self.itemN = QListWidgetItem()
+                self.custom_widget = QCustomQWidget()
+                self.custom_widget.setTextSecond(co.camera_name)
+                self.itemN.setText(str(self.cnt))
+                self.custom_widget.setStatusIcon(co.statusBtn)
+                self.itemN.setSizeHint(self.custom_widget.sizeHint())
+                self.list_widget.addItem(self.itemN)
+                self.list_widget.setItemWidget(self.itemN, self.custom_widget)
+                self.cnt += 1
 
     def configBtn_on_click(self):
         custom_widget_list = self.list_widget.selectedItems()
@@ -146,3 +152,14 @@ class Main(QMainWindow, FROM_MAIN):
                     self.sub_edit.setCameraObjet(co)
 
         self.sub_edit.show()
+
+    def closeEvent(self, event):
+        close = QMessageBox()
+        close.setText("Are you sure?")
+        close.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+        close = close.exec()
+
+        if close == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
