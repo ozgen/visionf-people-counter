@@ -37,7 +37,6 @@ class SubEdit(QWidget, FROM_SUB_EDIT):
 
         if close == QMessageBox.Yes:
             event.accept()
-            self.switch_window.emit()
         else:
             event.ignore()
     # let the window close
