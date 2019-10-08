@@ -18,6 +18,7 @@ imagePath = 'red.ico'
 
 
 class SubEdit(QWidget, FROM_SUB_EDIT):
+    camera_object = None
 
     def __init__(self, parent=None):
         super(SubEdit, self).__init__(parent)
@@ -34,7 +35,19 @@ class SubEdit(QWidget, FROM_SUB_EDIT):
             self.close()
         else:
             event.ignore()
+
     # let the window close
+
+    def setCameraObjet(self, co):
+        self.camera_object = co
+        self.name.setText(co.camera_name)
+        self.url_name.setText(co.url)
+        if len(co.location) > 0:
+            self.location.setText(co.location)
+        self.video_player = MainVideoPlayerWidget(co.url)
+        self.imageScreen.addWidget(self.video_player)
+        self.roiBtn.clicked.connect(self.video_player.on_roi_click)
+        self.lineBtn.clicked.connect(self.video_player.on_line_click)
 
 
 class QCustomQWidget(QWidget):
@@ -130,13 +143,6 @@ class Main(QMainWindow, FROM_MAIN):
 
                 if cw.text() == str(i + 1):
                     co = self.item_list[i]
-                    self.sub_edit.name.setText(co.camera_name)
-                    self.sub_edit.url_name.setText(co.url)
-                    if len(co.location) > 0:
-                        self.sub_edit.location.setText(co.location)
-                    self.video_player = MainVideoPlayerWidget(co.url)
-                    self.sub_edit.imageScreen.addWidget(self.video_player)
-                    self.sub_edit.roiBtn.clicked.connect(self.video_player.on_roi_click)
-                    self.sub_edit.lineBtn.clicked.connect(self.video_player.on_line_click)
+                    self.sub_edit.setCameraObjet(co)
 
         self.sub_edit.show()
