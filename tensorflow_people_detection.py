@@ -11,6 +11,7 @@ from pyimagesearch.centroidtracker import CentroidTracker
 from pyimagesearch.trackableobject import TrackableObject
 import dlib
 
+
 from roi_elements import RoiElements
 
 
@@ -94,7 +95,7 @@ def on_mouse(event, x, y, flags, params):
             line = (line[0], line[1], x, y)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     ct = CentroidTracker(maxDisappeared=40, maxDistance=50)
     trackers = []
     trackableObjects = {}
@@ -115,8 +116,8 @@ if __name__ == "__main__":
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
 
-    cap = cv2.VideoCapture(config.CONFIG_IP_CAM)
-    # cap = cv2.VideoCapture(config.CONFIG_IP_CAM)
+    #cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME_2)
+    cap = cv2.VideoCapture(config.CONFIG_IP_CAM_REAL)
 
     # start the frames per second throughput estimator
     fps = FPS().start()
@@ -325,7 +326,7 @@ if __name__ == "__main__":
 
         # stop the timer and display FPS information
     fps.stop()
-    # print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
-    # print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+    print("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
+    print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
     cv2.destroyAllWindows()
