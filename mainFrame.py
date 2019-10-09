@@ -1,3 +1,5 @@
+import sys
+
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import *
 from PyQt5.uic import loadUiType
@@ -84,7 +86,6 @@ class Main(QMainWindow, FROM_MAIN):
         self.setupUi(self)
         self.addBtn.clicked.connect(self.addBtn_on_click)
         self.dellBtn1.clicked.connect(self.dellBtn1_on_click)
-        self.sub_edit = SubEdit()
         self.camera_url.setText("videos/TownCentreXVID.avi")
 
     def addBtn_on_click(self):
@@ -141,7 +142,7 @@ class Main(QMainWindow, FROM_MAIN):
     def configBtn_on_click(self):
         custom_widget_list = self.list_widget.selectedItems()
         if not custom_widget_list: return
-
+        self.sub_edit = SubEdit()
         for cw in custom_widget_list:
             for i in range(len(self.item_list)):
 
@@ -150,3 +151,15 @@ class Main(QMainWindow, FROM_MAIN):
                     self.sub_edit.setCameraObjet(co)
 
         self.sub_edit.show()
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+
+    w = Main()
+    w.resize(600, 620)
+    w.move(300, 300)
+    w.setWindowTitle('Simple')
+    w.show()
+
+    sys.exit(app.exec_())

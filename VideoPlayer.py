@@ -1,6 +1,7 @@
 import cv2
 
 import numpy as np
+from PyQt5.QtCore import QPoint, QSize, QRect, Qt
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5 import QtGui
@@ -84,46 +85,41 @@ class VideoPlayerWidget(QtWidgets.QWidget):
         self.image = QtGui.QImage()
 
 
-class ImgShowWidget(QtWidgets.QWidget):
-
+class ImgShowWidget(QtWidgets.QLabel):
+    initBB = None
     def __init__(self, image, parent=None):
         super().__init__(parent)
         self.image = image
         self._red = (0, 0, 255)
         self._width = 2
         self._min_size = (30, 30)
-        self.begin = QtCore.QPoint()
-        self.end = QtCore.QPoint()
+        self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+        self.origin = QPoint()
         pixmap01 = QtGui.QPixmap.fromImage(self.image)
         pixmap_image = QtGui.QPixmap(pixmap01)
-        self.label_imageDisplay = QtWidgets.QLabel()
-        self.label_imageDisplay.setPixmap(pixmap_image)
-        self.label_imageDisplay.setAlignment(QtCore.Qt.AlignCenter)
-        self.label_imageDisplay.setScaledContents(True)
-        self.label_imageDisplay.setMinimumSize(1, 1)
-        self.layOut = QVBoxLayout()
-        self.layOut.addWidget(self.label_imageDisplay)
-        self.layOut.addStretch()
-        self.setLayout(self.layOut)
-
-    def paintEvent(self, event):
-        painter = QtGui.QPainter(self)
-        painter.drawImage(0, 0, self.image)
-        self.image = QtGui.QImage()
+        self.setPixmap(pixmap_image)
+        self.setAlignment(QtCore.Qt.AlignCenter)
+        self.setScaledContents(True)
+        self.setMinimumSize(1, 1)
 
     def mousePressEvent(self, event):
-        self.begin = event.pos()
-        # self.end = event.pos()
-        self.update()
+
+        if event.button() == Qt.LeftButton:
+            self.origin = QPoint(event.pos())
+            self.rubberBand.setGeometry(QRect(self.origin, QSize()))
+            self.rubberBand.show()
 
     def mouseMoveEvent(self, event):
-        self.end = event.pos()
-        self.update()
+
+        if not self.origin.isNull():
+            self.rubberBand.setGeometry(QRect(self.origin, event.pos()).normalized())
 
     def mouseReleaseEvent(self, event):
-        # self.begin = event.pos()
-        self.end = event.pos()
-        self.update()
+
+        if event.button() == Qt.LeftButton:
+            self.rubberBand.show()
+            x = self.origin.x()
+            y = self.origin.y()
 
 
 class MainVideoPlayerWidget(QtWidgets.QWidget):
@@ -151,11 +147,7 @@ class MainVideoPlayerWidget(QtWidgets.QWidget):
     def on_roi_click(self):
         self.video_player_core.stop_recording()
         self.image = self.video_player_widget.image_tmp
-        self.label = QLabel()
-        pixmap01 = QtGui.QPixmap.fromImage(self.image)
-        self.label.setPixmap(pixmap01)
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.setScaledContents(True)
+        self.label = ImgShowWidget(self.image)
         self.ilayout.removeWidget(self.video_player_widget)
         self.ilayout.addWidget(self.label)
 
@@ -164,22 +156,3 @@ class MainVideoPlayerWidget(QtWidgets.QWidget):
         self.ilayout.removeWidget(self.label)
         self.label.deleteLater()
         self.ilayout.addWidget(self.video_player_widget)
-
-    def paintEvent(self, event):
-        painter = QtGui.QPainter(self)
-        painter.drawImage(0, 0, self.image)
-        self.image = QtGui.QImage()
-
-    def mousePressEvent(self, event):
-        self.begin = event.pos()
-        # self.end = event.pos()
-        self.update()
-
-    def mouseMoveEvent(self, event):
-        self.end = event.pos()
-        self.update()
-
-    def mouseReleaseEvent(self, event):
-        # self.begin = event.pos()
-        self.end = event.pos()
-        self.update()
