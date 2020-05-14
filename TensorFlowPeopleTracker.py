@@ -70,7 +70,7 @@ if __name__ == "__main__":
     model_path = UtilsIO.TRAINED_MODEL_TENSORFLOW
     odapi = DetectorAPI(path_to_ckpt=model_path)
     threshold = 0.7
-    cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME_2)
+    cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME)
 
     totalFrames = 0
     initBB = None

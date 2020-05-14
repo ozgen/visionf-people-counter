@@ -61,6 +61,7 @@ class DetectorAPI:
                              int(boxes[0, i, 3] * im_width))
 
         return boxes_list, scores[0].tolist(), [int(x) for x in classes[0].tolist()], int(num[0])
+        return boxes_list, scores[0].tolist(), [int(x) for x in classes[0].tolist()], int(num[0])
 
     def close(self):
         self.sess.close()
@@ -105,7 +106,7 @@ if __name__ == '__main__':
     W = None
     H = None
     roi = 250
-    initBB = None
+    initBB = (0, 0, 498, 280)
     roi_area = None
     roi_elements = None
 
@@ -117,7 +118,8 @@ if __name__ == '__main__':
     threshold = 0.7
 
     #cap = cv2.VideoCapture(UtilsIO.SAMPLE_FILE_NAME_2)
-    cap = cv2.VideoCapture(config.CONFIG_IP_CAM_REAL)
+    cap = cv2.VideoCapture(config.CONFIG_IP_CAM_7)
+    #cap = cv2.VideoCapture('videos/test.avi')
 
     # start the frames per second throughput estimator
     fps = FPS().start()
@@ -127,8 +129,10 @@ if __name__ == '__main__':
 
     while True:
         r, img = cap.read()
-        img = cv2.resize(img, (frame_size_w, frame_size_h))
-        rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if r:
+            img = cv2.resize(img, (frame_size_w, frame_size_h))
+            rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
 
         if lineFlag:
             if startPoint == True and endPoint == True:
@@ -149,7 +153,7 @@ if __name__ == '__main__':
         status = "Waiting"
         rects = []
 
-        if totalFrames % 7 == 0:
+        if totalFrames % 5 == 0:
             status = "Detecting"
             trackers = []
             if roi_area is not None:
@@ -157,7 +161,6 @@ if __name__ == '__main__':
 
             else:
                 boxes, scores, classes, num = odapi.processFrame(img)
-
             # Visualization of the results of a detection.
             for i in range(len(boxes)):
                 # Class 1 represents human
@@ -197,9 +200,7 @@ if __name__ == '__main__':
                 endY = int(pos.bottom())
 
                 rects.append((startX, startY, endX, endY))
-                # cv2.rectangle(img, (startX, startY), (endX, endY), (0, 255, 0), 2)
-
-            #        cv2.line(img, (0, roi), (W, roi), (0, 255, 255), 2)
+                cv2.rectangle(img, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
             objects = ct.update(rects)
 
@@ -239,14 +240,27 @@ if __name__ == '__main__':
                         if roi_elements is not None and roi_elements.line is not None:
 
                             if angle > 45 and directionX > 0 and centroid[0] > dx:
+                                frameNew = img[startY: startY + endY, startX: startX + endX]
+                                print("11111111111")
+                                print(startX,endX,startY,endY)
+                                imagesFolder = "./images"
+                                cv2.imwrite(imagesFolder + "/image_" + str(int(totalDown)) + ".jpg", frameNew)
+
                                 totalDown += 1
                                 to.counted = True
 
                             elif angle < 45 and directionY > 0 and centroid[1] > dy:
+                                frameNew = img[startY: endY, startX: endX]
+                                print("2222222222")
+                                print(startX, endX, startY, endY)
+                                imagesFolder = "./images"
+                                cv2.imwrite(imagesFolder + "/image_" + str(int(totalDown)) + ".jpg", frameNew)
+
                                 totalDown += 1
                                 to.counted = True
 
                         elif (directionY > 0 and centroid[1] > frame_size_h // 2):
+                            print("*************")
                             totalDown += 1
                             to.counted = True
 
@@ -295,6 +309,7 @@ if __name__ == '__main__':
                 initBB = None
                 initBB = cv2.selectROI("ROI_FRAME", img, fromCenter=False,
                                        showCrosshair=False)
+                print(initBB)
             #            cv2.imshow("tmp", tmp)
             #            cv2.namedWindow('real image')
             #            a = cv.SetMouseCallback('real image', on_mouse, 0)
